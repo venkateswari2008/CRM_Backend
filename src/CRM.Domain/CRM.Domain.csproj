@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Common settings inherited from Directory.Build.props -->
+
+</Project>
