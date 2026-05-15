@@ -4,6 +4,7 @@ using CRM.Application.Common;
 using CRM.Application.Sales.Dtos;
 using CRM.Application.Sales.Mapping;
 using CRM.Domain.Entities;
+using CRM.Domain.Enums;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
@@ -75,6 +76,7 @@ public sealed class SaleService : ISaleService
 
         var sale = SaleMapper.ToEntity(request);
         sale.UserId = ownerUserId;
+        ApplyStageLifecycle(sale);
 
         _db.Sales.Add(sale);
         await _db.SaveChangesAsync(ct);
@@ -109,10 +111,28 @@ public sealed class SaleService : ISaleService
         }
 
         SaleMapper.Apply(request, sale);
+        ApplyStageLifecycle(sale);
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation("Sale {SaleId} updated", sale.Id);
         return Result<SaleDto>.Success(SaleMapper.ToDto(sale));
+    }
+
+    /// <summary>
+    /// Stamps <see cref="Sale.ActualCloseDate"/> the first time a sale enters a closed stage,
+    /// and clears it if the sale is later reopened. Preserves the original close date as long
+    /// as the deal remains in a closed stage so reports stay stable.
+    /// </summary>
+    private static void ApplyStageLifecycle(Sale sale)
+    {
+        if (SaleStages.IsClosed(sale.Stage))
+        {
+            sale.ActualCloseDate ??= DateOnly.FromDateTime(DateTime.UtcNow);
+        }
+        else
+        {
+            sale.ActualCloseDate = null;
+        }
     }
 
     public async Task<Result<bool>> DeleteAsync(int id, CancellationToken ct)
@@ -152,6 +172,7 @@ public sealed class SaleService : ISaleService
             csv.WriteField("Amount");
             csv.WriteField("SaleDate");
             csv.WriteField("ExpectedCloseDate");
+            csv.WriteField("ActualCloseDate");
             await csv.NextRecordAsync();
 
             foreach (var s in sales)
@@ -166,6 +187,7 @@ public sealed class SaleService : ISaleService
                 csv.WriteField(s.Amount.ToString("F2", CultureInfo.InvariantCulture));
                 csv.WriteField(s.SaleDate.ToString("yyyy-MM-dd"));
                 csv.WriteField(s.ExpectedCloseDate?.ToString("yyyy-MM-dd"));
+                csv.WriteField(s.ActualCloseDate?.ToString("yyyy-MM-dd"));
                 await csv.NextRecordAsync();
             }
 

@@ -17,6 +17,7 @@ public static class SaleMapper
         s.Amount,
         s.SaleDate,
         s.ExpectedCloseDate,
+        s.ActualCloseDate,
         s.Notes,
         s.CreatedAt,
         s.UpdatedAt);

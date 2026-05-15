@@ -22,6 +22,12 @@ public class Sale : AuditableEntity, ISoftDeletable
 
     public DateOnly? ExpectedCloseDate { get; set; }
 
+    /// <summary>
+    /// Stamped automatically when <see cref="Stage"/> moves into <see cref="Enums.SaleStages.ClosedStages"/>
+    /// and cleared when the deal is reopened. Never set directly by the client.
+    /// </summary>
+    public DateOnly? ActualCloseDate { get; set; }
+
     public string? Notes { get; set; }
 
     public bool IsDeleted { get; set; }

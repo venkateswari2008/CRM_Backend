@@ -1,8 +1,8 @@
+using CRM.Api.Common;
 using CRM.Api.Extensions;
 using CRM.Application.Common;
 using CRM.Application.Customers.Dtos;
 using CRM.Application.Customers.Services;
-using CRM.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,7 +49,7 @@ public sealed class CustomersController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = UserRoles.Admin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -64,7 +64,7 @@ public sealed class CustomersController : ControllerBase
 
     /// <summary>Legacy POST update preserved for compatibility with the case-study spec.</summary>
     [HttpPost("{id:int}/update")]
-    [Authorize(Roles = UserRoles.Admin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<CustomerDto>> UpdateLegacy(
         [FromRoute] int id,
@@ -72,7 +72,7 @@ public sealed class CustomersController : ControllerBase
         CancellationToken ct) => await Update(id, request, ct);
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = UserRoles.Admin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)

@@ -8,10 +8,12 @@ using CRM.Api.Middleware;
 using CRM.Application;
 using CRM.Application.Abstractions;
 using CRM.Application.Auth.Models;
+using CRM.Domain.Enums;
 using CRM.Infrastructure;
 using CRM.Infrastructure.Persistence;
 using CRM.Infrastructure.Persistence.Seeding;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -105,7 +107,12 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+// Secure-by-default: any endpoint without an explicit attribute still requires auth.
+// Use [AllowAnonymous] on the few endpoints that truly need to be public (login, signup).
+builder.Services
+    .AddAuthorizationBuilder()
+    .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
+    .AddPolicy(AuthorizationPolicies.AdminOnly, p => p.RequireRole(UserRoles.Admin));
 
 // ---------- CORS ----------
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()

@@ -12,6 +12,7 @@ public sealed record SaleDto(
     decimal Amount,
     DateOnly SaleDate,
     DateOnly? ExpectedCloseDate,
+    DateOnly? ActualCloseDate,
     string? Notes,
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt);

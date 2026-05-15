@@ -1,3 +1,4 @@
+using CRM.Api.Common;
 using CRM.Api.Extensions;
 using CRM.Application.Common;
 using CRM.Application.Sales.Dtos;
@@ -63,7 +64,9 @@ public sealed class SalesController : ControllerBase
         CancellationToken ct) => await Update(id, request, ct);
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {
         var result = await _sales.DeleteAsync(id, ct);
@@ -71,7 +74,9 @@ public sealed class SalesController : ControllerBase
     }
 
     [HttpGet("export")]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [Produces("text/csv")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Export([FromQuery] SaleFilter filter, CancellationToken ct)
     {
         var result = await _sales.ExportCsvAsync(filter, ct);
