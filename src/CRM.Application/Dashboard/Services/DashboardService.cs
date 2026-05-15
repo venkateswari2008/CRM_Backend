@@ -25,8 +25,8 @@ public sealed class DashboardService : IDashboardService
         var yearStart = new DateOnly(targetYear, 1, 1);
         var yearEnd = new DateOnly(targetYear, 12, 31);
 
-        // Materialise once — SQLite cannot aggregate decimals server-side, and a CRM
-        // dataset is small enough that an in-memory roll-up is the right trade-off.
+        // Materialise once — a CRM dataset is small enough that an in-memory
+        // roll-up is the right trade-off and keeps the projection logic readable.
         var sales = await _db.Sales.AsNoTracking()
             .Where(s => s.SaleDate >= yearStart && s.SaleDate <= yearEnd)
             .Select(s => new

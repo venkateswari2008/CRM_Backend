@@ -31,15 +31,17 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
     {
         var expiresAt = _clock.UtcNow.AddMinutes(_settings.AccessTokenMinutes);
 
+        // Use short claim names that line up with TokenValidationParameters in Program.cs
+        // (NameClaimType = "unique_name", RoleClaimType = "role"). Avoid ClaimTypes.* long URIs
+        // — JwtSecurityTokenHandler does not rewrite them on outbound, so they would survive into
+        // the JWT payload as long URIs and miss the validator's role/name lookup.
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.UniqueName, user.Username),
             new(JwtRegisteredClaimNames.Email, user.Email),
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role),
+            new("role", user.Role),
         };
 
         var keyBytes = Encoding.UTF8.GetBytes(_settings.SigningKey);

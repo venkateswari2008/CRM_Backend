@@ -28,7 +28,6 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<AuditingSaveChangesInterceptor>();
 
-        var provider = configuration["Database:Provider"] ?? "Sqlite";
         var connection = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured.");
 
@@ -36,16 +35,8 @@ public static class DependencyInjection
         {
             var interceptor = sp.GetRequiredService<AuditingSaveChangesInterceptor>();
 
-            if (string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase))
-            {
-                opts.UseSqlServer(connection, sql =>
-                    sql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
-            }
-            else
-            {
-                opts.UseSqlite(connection, sql =>
-                    sql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
-            }
+            opts.UseSqlServer(connection, sql =>
+                sql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
 
             opts.AddInterceptors(interceptor);
         });

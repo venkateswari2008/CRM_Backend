@@ -40,11 +40,6 @@ lcov.info
 logs/
 *.log
 
-# ---- Local databases (SQLite dev) ----
-*.db
-*.db-shm
-*.db-wal
-
 # ---- User-specific & secrets ----
 secrets.json
 appsettings.local.json

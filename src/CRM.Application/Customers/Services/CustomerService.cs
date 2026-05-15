@@ -110,6 +110,18 @@ public sealed class CustomerService : ICustomerService
         if (customer is null)
             return Result<bool>.Failure($"Customer {id} not found.", ResultErrorCodes.NotFound);
 
+        // Block delete when the customer still has live sales (DbSet<Sale> has a query
+        // filter on !IsDeleted, so this only sees active deals). Reassign or close the
+        // sales first — industry-typical guard against orphaning a deal's parent record.
+        var activeSales = await _db.Sales.CountAsync(s => s.CustomerId == id, ct);
+        if (activeSales > 0)
+        {
+            return Result<bool>.Failure(
+                $"Cannot delete this customer: {activeSales} active sale(s) reference them. " +
+                "Close or reassign the sale(s) first.",
+                ResultErrorCodes.Conflict);
+        }
+
         customer.IsDeleted = true;
         await _db.SaveChangesAsync(ct);
 

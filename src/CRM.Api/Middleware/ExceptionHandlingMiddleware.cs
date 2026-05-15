@@ -2,6 +2,8 @@ using System.Text.Json;
 using CRM.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace CRM.Api.Middleware;
 
@@ -48,6 +50,8 @@ public sealed class ExceptionHandlingMiddleware
             ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
             EntityNotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             DuplicateEntityException => (StatusCodes.Status409Conflict, "Duplicate resource"),
+            DbUpdateException dbu when IsUniqueConstraintViolation(dbu)
+                => (StatusCodes.Status409Conflict, "Duplicate resource"),
             DomainException => (StatusCodes.Status400BadRequest, "Domain rule violated"),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             OperationCanceledException => (ClientClosedRequest, "Request cancelled"),
@@ -61,13 +65,21 @@ public sealed class ExceptionHandlingMiddleware
             _logger.LogWarning(ex, "Handled exception on {Method} {Path}: {Message}",
                 context.Request.Method, context.Request.Path, ex.Message);
 
+        var detail = ex switch
+        {
+            DbUpdateException dbu when IsUniqueConstraintViolation(dbu)
+                => "This change conflicts with an existing record on a unique field (e.g. email or username). Use a different value.",
+            _ when _env.IsDevelopment() || status < 500 => ex.Message,
+            _ => "See server logs for details.",
+        };
+
         var problem = new ProblemDetails
         {
             Title = title,
             Status = status,
             Type = $"https://httpstatuses.io/{status}",
             Instance = context.Request.Path,
-            Detail = _env.IsDevelopment() || status < 500 ? ex.Message : "See server logs for details.",
+            Detail = detail,
         };
 
         if (ex is ValidationException ve)
@@ -87,4 +99,8 @@ public sealed class ExceptionHandlingMiddleware
         context.Response.ContentType = "application/problem+json";
         await JsonSerializer.SerializeAsync(context.Response.Body, problem, JsonOptions);
     }
+
+    // SQL Server error 2601 = unique-index violation, 2627 = primary-key/unique-constraint violation.
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
+        ex.InnerException is SqlException sql && (sql.Number == 2601 || sql.Number == 2627);
 }

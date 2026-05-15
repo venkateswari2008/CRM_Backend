@@ -18,8 +18,10 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         b.Property(x => x.Role).IsRequired().HasMaxLength(20);
         b.Property(x => x.RowVersion).IsRowVersion();
 
-        b.HasIndex(x => x.Username).IsUnique();
-        b.HasIndex(x => x.Email).IsUnique();
+        // Filter the unique indexes so soft-deleted rows do not block a live row from
+        // reusing the same username/email. Mirrors the HasQueryFilter on IsDeleted below.
+        b.HasIndex(x => x.Username).IsUnique().HasFilter("[IsDeleted] = 0");
+        b.HasIndex(x => x.Email).IsUnique().HasFilter("[IsDeleted] = 0");
 
         b.HasQueryFilter(x => !x.IsDeleted);
     }

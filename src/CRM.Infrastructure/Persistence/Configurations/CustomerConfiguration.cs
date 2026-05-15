@@ -27,7 +27,9 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 
         b.Ignore(x => x.FullName);
 
-        b.HasIndex(x => x.Email).IsUnique();
+        // Filter the unique index so soft-deleted rows do not block a live row from
+        // reusing the same email. Mirrors the HasQueryFilter on IsDeleted below.
+        b.HasIndex(x => x.Email).IsUnique().HasFilter("[IsDeleted] = 0");
         b.HasIndex(x => new { x.LastName, x.FirstName });
         b.HasIndex(x => x.Company);
 

@@ -30,6 +30,9 @@ public static class ResultExtensions
         return result.ErrorCode switch
         {
             ResultErrorCodes.NotFound => controller.NotFound(BuildProblem(controller, 404, result)),
+            ResultErrorCodes.Duplicate => controller.Conflict(BuildProblem(controller, 409, result)),
+            ResultErrorCodes.Conflict => controller.Conflict(BuildProblem(controller, 409, result)),
+            ResultErrorCodes.Validation => controller.BadRequest(BuildProblem(controller, 400, result)),
             _ => new ObjectResult(BuildProblem(controller, 500, result)) { StatusCode = 500 },
         };
     }
