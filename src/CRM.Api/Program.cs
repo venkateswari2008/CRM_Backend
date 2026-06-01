@@ -156,10 +156,9 @@ app.UseSwaggerUI();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHsts();
+    app.UseHttpsRedirection();   
 }
 
-app.UseHttpsRedirection();
 app.UseCors();
 app.UseIpRateLimiting();
 
