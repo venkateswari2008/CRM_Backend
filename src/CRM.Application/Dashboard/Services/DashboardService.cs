@@ -2,6 +2,7 @@ using CRM.Application.Abstractions;
 using CRM.Application.Dashboard.Dtos;
 using CRM.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace CRM.Application.Dashboard.Services;
 
@@ -9,19 +10,38 @@ public sealed class DashboardService : IDashboardService
 {
     private const int TopCustomerCount = 5;
     private const int RecentLeadsDays = 30;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(2);
 
     private readonly IApplicationDbContext _db;
     private readonly IDateTimeProvider _clock;
+    private readonly ICacheService _cache;
+    private readonly ILogger<DashboardService> _logger;
 
-    public DashboardService(IApplicationDbContext db, IDateTimeProvider clock)
+    public DashboardService(
+        IApplicationDbContext db,
+        IDateTimeProvider clock,
+        ICacheService cache,
+        ILogger<DashboardService> logger)
     {
         _db = db;
         _clock = clock;
+        _cache = cache;
+        _logger = logger;
     }
 
     public async Task<DashboardDto> GetOverviewAsync(int? year, CancellationToken ct)
     {
         var targetYear = year ?? _clock.Today.Year;
+        var cacheKey = $"dashboard:overview:{targetYear}";
+
+        var cached = await _cache.GetAsync<DashboardDto>(cacheKey, ct);
+        if (cached is not null)
+        {
+            _logger.LogInformation("Cache HIT {Key}", cacheKey);
+            return cached;
+        }
+        _logger.LogInformation("Cache MISS {Key}", cacheKey);
+
         var yearStart = new DateOnly(targetYear, 1, 1);
         var yearEnd = new DateOnly(targetYear, 12, 31);
 
@@ -78,7 +98,7 @@ public sealed class DashboardService : IDashboardService
             .Take(TopCustomerCount)
             .ToList();
 
-        return new DashboardDto(
+        var result = new DashboardDto(
             totalSales,
             newLeads,
             open,
@@ -87,5 +107,8 @@ public sealed class DashboardService : IDashboardService
             monthly,
             stageBreakdown,
             topCustomers);
+
+        await _cache.SetAsync(cacheKey, result, CacheTtl, ct);
+        return result;
     }
 }

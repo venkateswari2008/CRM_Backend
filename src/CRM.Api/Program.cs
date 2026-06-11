@@ -42,7 +42,7 @@ builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 // ---------------- Application + Infrastructure ----------------
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 // ---------------- Controllers + JSON ----------------
 builder.Services
@@ -136,6 +136,8 @@ builder.Services.Configure<IpRateLimitOptions>(
     builder.Configuration.GetSection("IpRateLimiting"));
 builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+
 
 // ---------------- Health Checks ----------------
 builder.Services.AddHealthChecks()
