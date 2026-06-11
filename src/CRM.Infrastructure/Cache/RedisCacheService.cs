@@ -24,7 +24,7 @@ public sealed class RedisCacheService : ICacheService
         {
             var json = await _multiplexer.GetDatabase().StringGetAsync(key);
             if (json.IsNullOrEmpty) return default;
-            return JsonSerializer.Deserialize<T>(json!);
+            return JsonSerializer.Deserialize<T>((string)json!);
         }
         catch (Exception ex)
         {
