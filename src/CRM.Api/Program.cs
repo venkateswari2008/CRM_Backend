@@ -188,7 +188,7 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 try
 {
-    Log.Information("CRM API starting");
+    Log.Information("CRM API starting...");
     app.Run();
 }
 catch (Exception ex)
