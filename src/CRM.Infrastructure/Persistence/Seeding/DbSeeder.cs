@@ -19,7 +19,8 @@ public static class DbSeeder
         string adminPassword,
         CancellationToken ct = default)
     {
-        await db.Database.MigrateAsync(ct);
+        if (db.Database.IsRelational())
+            await db.Database.MigrateAsync(ct);
 
         if (!await db.Users.AnyAsync(ct))
         {
